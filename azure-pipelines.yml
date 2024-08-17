@@ -1,3 +1,224 @@
+
+Search
+Write
+
+Alivelusainikhil
+Last chance! 2 days left!
+
+Get 20% off membership now
+
+Deploy Application on Azure Kubernetes Service (AKS) cluster using Azure DevOps
+DevOps Guru
+DevOps Guru
+
+·
+Follow
+
+11 min read
+·
+Jun 30, 2023
+8
+
+
+1
+
+
+
+
+
+
+overall steps/flow
+GitHub
+
+Create a remote repo in GitHub (name: azure-DevOps-CI-pipeline).
+
+Create GitHub repository
+2. Create local repo in your local desktop.
+
+mkdir azure-devops-CI-pipeline 
+3. Upload source code in your local repo created above.
+
+Kube-manifests
+Dockerfile
+index.html (supporting doc for index.html-> about_lp, cicd)
+
+source code
+4. Push source code to remote repo.
+
+cd azure-devops-CI-pipeline
+git init
+git add .
+git commit -am "initial commit"
+git remote add origin https://github.com/anilbd2003/azure-devops-CI-pipeline.git
+git push --set-upstream origin master
+
+source code in GitHub
+Azure Portal
+
+5. Create AKS cluster.
+
+Azure Kubernetes Service (AKS) simplifies deploying a managed Kubernetes cluster in Azure by offloading the operational overhead to Azure. As a hosted Kubernetes service, Azure handles critical tasks, like health monitoring and maintenance. When you create an AKS cluster, a control plane is automatically created and configured. This control plane is provided at no cost as a managed Azure resource abstracted from the user. You only pay for and manage the nodes attached to the AKS cluster.
+
+Pre-requisite: Make sure to install Azure CLI. You must also have Docker installed locally.
+
+For Azure CLI installation, click here.
+
+For Docker installation, click here.
+
+az --version
+az login
+docker version
+# create resource group with name: aks-rg
+az group create --location eastus --name aks-rg
+
+# create AKS cluster with name: aks-cluster
+az aks create --name aks-cluster \
+              --resource-group aks-rg \
+              --node-count 1 \
+              --network-plugin azure \
+              --enable-managed-identity \
+              --generate-ssh-keys
+
+# connect to cluster
+az aks get-credentials --name aks-cluster --resource-group aks-rg
+
+Resource group created in portal
+
+AKS cluster created in portal
+6. Create ACR (Azure Container Registry).
+
+Azure Container Registry is a managed registry service based on the open-source Docker Registry 2.0. Create and maintain Azure container registries to store and manage your container images and related artifacts. Azure Container Registry is available in multiple service tiers (also known as SKUs).
+
+Basic tier
+Standard tier
+Premium tiers
+
+#Create acr (--name must be unique)
+az acr create --resource-group aks-rg \
+              --name myacrcontainerregistry1389 --sku Basic
+The registry name must be unique within Azure and contain 5–50 lowercase alphanumeric characters. In the above example, myacrcontainerregistry1389 is used. Update this to a unique value.
+
+
+Container registry created from above command
+Azure DevOps
+
+7. Create organization in azure DevOps.
+
+Name: demoOrg
+
+8. Create DevOps project (devopsdemo)inside organization.
+
+
+9. Create service connection to ACR (manually).
+
+You can create a connection from Azure Pipelines to external and remote services for executing tasks in a job. Once you establish a connection, you can view, edit, and add security to the service connection.
+
+For example, you might want to connect to one of the following categories and their services.
+
+Your Microsoft Azure subscription: Create a service connection with your Microsoft Azure subscription and use the name of the service connection in an Azure Web Site Deployment task in a release pipeline.
+A different build server or file server: Create a standard GitHub Enterprise Server service connection to a GitHub repository.
+An online continuous integration environment: Create a Jenkins service connection for continuous integration of Git repositories.
+Services installed on remote computers: Create an Azure Resource Manager service connection to a VM with a managed service identity.
+Project…devopsdemo…Project Settings…Pipelines…Service Connections…New Service Connection…Choose a Service or Connection Type: Docker Registry…Next…
+
+Registry Type: Azure Container Registry…
+
+Subscription: choose your subscription
+Sign in
+Authentication type: service principle
+Azure Container Registry: myacrcontainerregistry1389 (choose your registry created in step…)
+Service Connection Name: manual-devops-acr-svc
+Check grant access permission to all pipelines.
+Click on Save
+
+10. Create build pipeline (CI).
+
+Pipeline= {Build pipeline (CI)+Release Pipeline (CD)}
+
+
+10.1. Go to Pipelines…New Pipeline…Where is your Code?: GitHub
+
+
+sign into GitHub. Select Repository: azure-devops-CI-pipeline.
+
+approve and install- this will give azure pipeline permission to read and write to GitHub repo. Sign in to azure devops… select your organization and your project (created above) and hit continue.
+Configure Your Pipeline: select Starter Pipeline
+
+You will get sample code as below.
+
+
+Sample code. Delete this sample code and start from scratch
+Pipeline Concept:
+
+Stages -> Stage -> Jobs -> Job -> Steps -> Task1, Task2, script1, script…
+
+
+pipeline flow
+A trigger tells a Pipeline to run.
+A pipeline is made up of one or more stages. A pipeline can deploy to one or more environments.
+A stage is a way of organizing jobs in a pipeline and each stage can have one or more jobs.
+Each job runs on one agent. A job can also be agentless.
+Each agent runs a job that contains one or more steps.
+A step can be a task or script and is the smallest building block of a pipeline.
+A task is a pre-packaged script that performs an action, such as invoking a REST API or publishing a build artifact.
+An artifact is a collection of files or packages published by a run.
+Our demo pipeline will have one stage (build) and 2 tasks under steps.
+
+Task1: Build docker image and push it to ACR.
+
+Task 2: Publish build artifacts to azure pipeline.
+
+10.2. Configure pipeline code.
+
+Delete sample code and add code as below.
+
+#this pipeline will be trigger to run by master branch of github repo. 
+trigger:
+ - master
+#add variables
+variables:
+  tag: '$(Build.BuildId)'
+stages:
+- stage: Build
+  displayName: Build Stage
+  jobs:
+  - job: Build
+    displayName: Build Job
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+Inside steps, you will have task.
+
+Task1: Build docker image and push it to ACR. you can use show assistance and use Docker task.
+
+
+
+configure docker task
+Above task assistance will generate code as below.
+
+# Task-1: Build Docker Image and push to Azure Container Registry ACR
+    - task: Docker@2
+      inputs:
+        containerRegistry: 'manual-devops-acr-svc'
+        repository: 'app1'
+        command: 'buildAndPush'
+        Dockerfile: '**/Dockerfile'
+        tags: |
+          $(tag)
+Task 2: Publish build artifacts to azure pipeline. you can use show assistance and use Publish build artifacts task.
+
+
+
+Above task assistance will generate code as below.
+
+# Task 2 publish build artifacts
+         - task: PublishBuildArtifacts@1
+           inputs:
+            PathtoPublish: '$(System.DefaultWorkingDirectory)/kube-manifests'
+            ArtifactName: 'kube-manifests'
+            publishLocation: 'Container'
+Overall code:
+
 trigger:
 - master
 
@@ -14,12 +235,14 @@ stages:
          vmImage: 'ubuntu-latest'
        steps:
          # Task-1: Build Docker Image and push to Azure Container Registry ACR
-        - task: Docker@2
-          inputs:
-            containerRegistry: 'manual-devops-acr-svc'
-            repository: 'app1'
-            command: 'buildAndPush'
-            Dockerfile: '**/Dockerfile'
+         - task: Docker@2
+           inputs:
+             containerRegistry: 'manual-devops-acr-svc'
+             repository: 'app1'
+             command: 'buildAndPush'
+             Dockerfile: '**/Dockerfile'
+             tags: 
+               $(tag)
         
          # Task 2 publish build artifacts
          - task: PublishBuildArtifacts@1

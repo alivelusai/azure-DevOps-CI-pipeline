@@ -14,14 +14,12 @@ stages:
          vmImage: 'ubuntu-latest'
        steps:
          # Task-1: Build Docker Image and push to Azure Container Registry ACR
-         - task: Docker@2
-           inputs:
-             containerRegistry: 'manual-devops-acr-svc'
-             repository: 'app1'
-             command: 'buildAndPush'
-             Dockerfile: '**/Dockerfile'
-             tags: 
-               $(tag)
+        - task: Docker@2
+          inputs:
+            containerRegistry: 'manual-devops-acr-svc'
+            repository: 'app1'
+            command: 'buildAndPush'
+            Dockerfile: '**/Dockerfile'
         
          # Task 2 publish build artifacts
          - task: PublishBuildArtifacts@1

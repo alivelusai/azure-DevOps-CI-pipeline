@@ -4,14 +4,15 @@ trigger:
 variables:
   tag: '$(Build.BuildId)'
 
+pool: 
+   vmImage: 'ubuntu-latest'
+   
 stages:
   - stage: Build
     displayName: Build Stage
     jobs:
      - job: Build
        displayName: Build job
-       pool: 
-         vmImage: 'ubuntu-latest'
        steps:
          # Task-1: Build Docker Image and push to Azure Container Registry ACR
          - task: Docker@2

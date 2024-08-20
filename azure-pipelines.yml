@@ -18,6 +18,7 @@ stages:
          - task: Docker@2
            inputs:
              containerRegistry: 'manual-devops-acr-svc'
+             repository: 'alivelusai'
              command: 'buildAndPush'
              Dockerfile: '**/Dockerfile'
              tags: '$(tag)'

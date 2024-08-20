@@ -18,11 +18,9 @@ stages:
          - task: Docker@2
            inputs:
              containerRegistry: 'manual-devops-acr-svc'
-             repository: 'alivelusai/app1'
              command: 'buildAndPush'
              Dockerfile: '**/Dockerfile'
-             tags: 
-               $(tag)
+             tags: '$(tag)'
         
          # Task 2 publish build artifacts
          - task: PublishBuildArtifacts@1
